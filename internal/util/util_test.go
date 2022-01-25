@@ -25,8 +25,9 @@ func TestIsDisconnection(t *testing.T) {
 		{syscall.ETIMEDOUT, true},
 	}
 
+	count := 0
 	for _, tst := range cases {
-		actual := IsDisconnection(tst.err)
+		actual := IsDisconnection(tst.err, &count, 0)
 		if actual != tst.expected {
 			t.Errorf("unexpected disconnected truth value: %t (expecting %t) for case: %v", actual, tst.expected, tst.err)
 		}

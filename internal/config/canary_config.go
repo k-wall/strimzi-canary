@@ -45,6 +45,7 @@ const (
 	ConnectionCheckLatencyBucketsEnvVar = "CONNECTION_CHECK_LATENCY_BUCKETS"
 	StatusCheckIntervalEnvVar           = "STATUS_CHECK_INTERVAL_MS"
 	StatusTimeWindowEnvVar              = "STATUS_TIME_WINDOW_MS"
+	IoTimeoutEnvVar                     = "IO_TIMEOUT_LIMIT"
 
 	// default values for environment variables
 	BootstrapServersDefault              = "localhost:9092"
@@ -73,6 +74,7 @@ const (
 	ConnectionCheckLatencyBucketsDefault = "100,200,400,800,1600"
 	StatusCheckIntervalDefault           = 30000
 	StatusTimeWindowDefault              = 300000
+	IoTimeoutLimitDefault                = 2
 )
 
 // CanaryConfig defines the canary tool configuration
@@ -103,6 +105,7 @@ type CanaryConfig struct {
 	ConnectionCheckLatencyBuckets []float64
 	StatusCheckInterval           time.Duration
 	StatusTimeWindow              time.Duration
+	IoTimeoutLimit                int
 }
 
 // NewCanaryConfig returns an configuration instance from environment variables
@@ -134,6 +137,7 @@ func NewCanaryConfig() *CanaryConfig {
 		ConnectionCheckLatencyBuckets: latencyBuckets(lookupStringEnv(ConnectionCheckLatencyBucketsEnvVar, ConnectionCheckLatencyBucketsDefault)),
 		StatusCheckInterval:           time.Duration(lookupIntEnv(StatusCheckIntervalEnvVar, StatusCheckIntervalDefault)),
 		StatusTimeWindow:              time.Duration(lookupIntEnv(StatusTimeWindowEnvVar, StatusTimeWindowDefault)),
+		IoTimeoutLimit:                lookupIntEnv(IoTimeoutEnvVar, IoTimeoutLimitDefault),
 	}
 	return &config
 }
@@ -231,9 +235,10 @@ func (c CanaryConfig) String() string {
 	return fmt.Sprintf("{BootstrapServers:%s, BootstrapBackoffMaxAttempts:%d, BootstrapBackoffScale:%d, Topic:%s, TopicConfig:%v, ReconcileInterval:%d ms, "+
 		"ClientID:%s, ConsumerGroupID:%s, ProducerLatencyBuckets:%v, EndToEndLatencyBuckets:%v, ExpectedClusterSize:%d, KafkaVersion:%s,"+
 		"SaramaLogEnabled:%t, VerbosityLogLevel:%d, TLSEnabled:%t, TLSCACert:%s, TLSClientCert:%s, TLSClientKey:%s, TLSInsecureSkipVerify:%t,"+
-		"SASLMechanism:%s, SASLUser:%s, SASLPassword:%s, ConnectionCheckInterval:%d ms, ConnectionCheckLatencyBuckets:%v, StatusCheckInterval:%d ms, StatusTimeWindow:%d ms}",
+		"SASLMechanism:%s, SASLUser:%s, SASLPassword:%s, ConnectionCheckInterval:%d ms, ConnectionCheckLatencyBuckets:%v, StatusCheckInterval:%d ms, StatusTimeWindow:%d ms," +
+		"IoTimeoutLimit:%d}",
 		c.BootstrapServers, c.BootstrapBackoffMaxAttempts, c.BootstrapBackoffScale, c.Topic, c.TopicConfig, c.ReconcileInterval, c.ClientID, c.ConsumerGroupID,
 		c.ProducerLatencyBuckets, c.EndToEndLatencyBuckets, c.ExpectedClusterSize, c.KafkaVersion, c.SaramaLogEnabled, c.VerbosityLogLevel,
 		c.TLSEnabled, TLSCACert, TLSClientCert, TLSClientKey, c.TLSInsecureSkipVerify, c.SASLMechanism, SASLUser, SASLPassword,
-		c.ConnectionCheckInterval, c.ConnectionCheckLatencyBuckets, c.StatusCheckInterval, c.StatusTimeWindow)
+		c.ConnectionCheckInterval, c.ConnectionCheckLatencyBuckets, c.StatusCheckInterval, c.StatusTimeWindow, c.IoTimeoutLimit)
 }

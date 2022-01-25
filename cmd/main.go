@@ -81,6 +81,7 @@ func newClient(canaryConfig *config.CanaryConfig) (sarama.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	config.Net.KeepAlive = -1
 	config.Version = kafkaVersion
 	config.ClientID = canaryConfig.ClientID
 	// set manual partitioner in order to specify the destination partition on sending

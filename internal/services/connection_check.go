@@ -31,12 +31,13 @@ var (
 )
 
 type ConnectionService struct {
-	canaryConfig *config.CanaryConfig
-	saramaConfig *sarama.Config
-	admin        sarama.ClusterAdmin
-	brokers      []*sarama.Broker
-	stop         chan struct{}
-	syncStop     sync.WaitGroup
+	canaryConfig        *config.CanaryConfig
+	saramaConfig        *sarama.Config
+	admin               sarama.ClusterAdmin
+	brokers             []*sarama.Broker
+	stop                chan struct{}
+	syncStop            sync.WaitGroup
+	deadlineExceedCount int
 }
 
 // NewConnectionService returns an instance of ConnectionService
@@ -120,12 +121,13 @@ func (cs *ConnectionService) connectionCheck() {
 			return
 		}
 		cs.admin = admin
+		cs.deadlineExceedCount = 0
 	}
 
 	if cs.isDynamicScalingEnabled() || cs.canaryConfig.ExpectedClusterSize != len(cs.brokers) {
 		cs.brokers, _, err = cs.admin.DescribeCluster()
 		if err != nil {
-			if util.IsDisconnection(err) {
+			if util.IsDisconnection(err, &cs.deadlineExceedCount, cs.canaryConfig.IoTimeoutLimit) {
 				// Kafka brokers close connection to the admin client not able to recover
 				// Sarama issues: https://github.com/Shopify/sarama/issues/2042, https://github.com/Shopify/sarama/issues/1796
 				// Workaround closing the admin client and the reopen on next connection check

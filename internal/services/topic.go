@@ -29,10 +29,11 @@ type TopicReconcileResult struct {
 
 // TopicService defines the service for canary topic management
 type TopicService struct {
-	canaryConfig *config.CanaryConfig
-	saramaConfig *sarama.Config
-	admin        sarama.ClusterAdmin
-	initialized  bool
+	canaryConfig          *config.CanaryConfig
+	saramaConfig          *sarama.Config
+	admin                 sarama.ClusterAdmin
+	initialized           bool
+	deadlineExceededCount int
 }
 
 var (
@@ -100,7 +101,7 @@ func NewTopicService(canaryConfig *config.CanaryConfig, saramaConfig *sarama.Con
 // If a scale up, scale down, scale up happens, it forces a leader election for having preferred leaders
 func (ts *TopicService) Reconcile() (TopicReconcileResult, error) {
 	result, err := ts.reconcileTopic()
-	if err != nil && util.IsDisconnection(err) {
+	if err != nil && util.IsDisconnection(err, &ts.deadlineExceededCount, ts.canaryConfig.IoTimeoutLimit) {
 		// Kafka brokers close connection to the topic service admin client not able to recover
 		// Sarama issues: https://github.com/Shopify/sarama/issues/2042, https://github.com/Shopify/sarama/issues/1796
 		// Workaround closing the topic service with its admin client and the reopen on next reconcile
@@ -120,6 +121,7 @@ func (ts *TopicService) reconcileTopic() (TopicReconcileResult, error) {
 			return result, err
 		}
 		ts.admin = admin
+		ts.deadlineExceededCount = 0
 	}
 
 	// getting brokers for assigning canary topic replicas accordingly
